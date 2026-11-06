@@ -8,7 +8,7 @@ import { listCustomPages } from "../tools/customPages.ts";
 import { listInAppEvents } from "../tools/inAppEvents.ts";
 import { listing, screenshots } from "../tools/productPage.ts";
 import { listCustomerReviews } from "../tools/reviews.ts";
-import { listBetaGroups, listBetaTesters } from "../tools/testflight.ts";
+import { listBetaGroups, listBetaTesters, listCrashes, listFeedback, listGroupBuilds } from "../tools/testflight.ts";
 import { listAppStoreVersions } from "../tools/versions.ts";
 import type { AreaName } from "./areas.ts";
 
@@ -102,7 +102,7 @@ export const POLISHED: Record<AreaName, readonly PolishedLookup[]> = {
   testflight: [
     {
       name: "groups",
-      summary: "Beta groups, internal or external, public link",
+      summary: "Beta groups: internal or external, public link and tester limit, feedback on or off",
       argsHelp: "",
       needsApp: true,
       args: none,
@@ -115,6 +115,30 @@ export const POLISHED: Record<AreaName, readonly PolishedLookup[]> = {
       needsApp: true,
       args: z.object({ group: text(200) }).strict(),
       run: (deps, i) => listBetaTesters(deps, { app: appOf(i), group: i.args.group as string | undefined, limit: i.limit, cursor: i.cursor }),
+    },
+    {
+      name: "group_builds",
+      summary: "Builds a beta group can test, with version, build number and expiry",
+      argsHelp: "group (required)",
+      needsApp: true,
+      args: z.object({ group: z.string().trim().min(1).max(200) }).strict(),
+      run: (deps, i) => listGroupBuilds(deps, { app: appOf(i), group: i.args.group as string, limit: i.limit, cursor: i.cursor }),
+    },
+    {
+      name: "feedback",
+      summary: "Tester screenshot feedback, newest first: date, tester, build, device, OS, comment",
+      argsHelp: "",
+      needsApp: true,
+      args: none,
+      run: (deps, i) => listFeedback(deps, { app: appOf(i), limit: i.limit, cursor: i.cursor }),
+    },
+    {
+      name: "crashes",
+      summary: "Tester crash reports, newest first: date, tester, build, device, OS, comment",
+      argsHelp: "",
+      needsApp: true,
+      args: none,
+      run: (deps, i) => listCrashes(deps, { app: appOf(i), limit: i.limit, cursor: i.cursor }),
     },
   ],
   builds: [

@@ -42,6 +42,8 @@ export type BetaGroupAttributes = {
   isInternalGroup?: boolean;
   publicLinkEnabled?: boolean;
   publicLink?: string;
+  publicLinkLimitEnabled?: boolean;
+  publicLinkLimit?: number;
   feedbackEnabled?: boolean;
 };
 
@@ -103,3 +105,13 @@ export type AppEventAttributes = {
   territorySchedules?: AppEventTerritorySchedule[];
 };
 export type AppEventLocalizationAttributes = { locale?: string; name?: string; shortDescription?: string };
+
+/** Shared by screenshot feedback and crash feedback submissions. */
+export type BetaFeedbackAttributes = {
+  createdDate?: string;
+  comment?: string;
+  email?: string;
+  deviceModel?: string;
+  osVersion?: string;
+  screenshots?: unknown[];
+};

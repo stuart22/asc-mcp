@@ -7,7 +7,16 @@ export type BuildStatus = (typeof BUILD_STATUSES)[number];
 const TO_APPLE: Record<BuildStatus, BuildProcessingState> = { processing: "PROCESSING", ready: "VALID", failed: "FAILED", invalid: "INVALID" };
 const FROM_APPLE: Record<BuildProcessingState, BuildStatus> = { PROCESSING: "processing", VALID: "ready", FAILED: "failed", INVALID: "invalid" };
 
-export type ListBuildsInput = { app: string; status?: BuildStatus; version?: string; platform?: Platform; limit?: number; cursor?: string };
+export type ListBuildsInput = {
+  app: string;
+  status?: BuildStatus;
+  version?: string;
+  platform?: Platform;
+  /** Only builds testers in this beta group can test. */
+  group?: { id: string; name: string };
+  limit?: number;
+  cursor?: string;
+};
 
 export async function listBuilds(deps: ToolDeps, input: ListBuildsInput): Promise<string> {
   const app = await deps.apps.resolve(input.app);
@@ -16,6 +25,7 @@ export async function listBuilds(deps: ToolDeps, input: ListBuildsInput): Promis
     "filter[processingState]": input.status ? TO_APPLE[input.status] : undefined,
     "filter[preReleaseVersion.version]": input.version,
     "filter[preReleaseVersion.platform]": input.platform,
+    "filter[betaGroups]": input.group?.id,
     sort: "-uploadedDate",
     include: "preReleaseVersion",
     "fields[builds]": "version,uploadedDate,expirationDate,expired,processingState,buildAudienceType,preReleaseVersion",
@@ -25,7 +35,7 @@ export async function listBuilds(deps: ToolDeps, input: ListBuildsInput): Promis
   });
 
   const builds = asList(doc);
-  const what = input.status ? `${input.status} builds` : "builds";
+  const what = (input.status ? `${input.status} builds` : "builds") + (input.group ? ` in "${input.group.name}"` : "");
   if (builds.length === 0) return `No ${what} found for ${appLabel(app)}.`;
 
   const now = deps.now();
