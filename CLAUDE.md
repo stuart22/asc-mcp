@@ -28,3 +28,4 @@ Locally-run, read-only MCP server for App Store Connect.
 - `npm test` — unit + in-process integration tests (Apple API mocked)
 - `npm run typecheck`, `npm run build`
 - `npm run smoke -- "<app>"` — manual test against the real API with your key
+- `npm run catalog -- <path/to/openapi.oas.json>` — regenerate the look-up catalog from Apple's spec. `src/catalog/catalog.json` is generated — never hand-edit.
