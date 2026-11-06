@@ -1,0 +1,21 @@
+# Build output and dependencies
+node_modules/
+dist/
+*.tgz
+
+# Secrets — never commit keys or env files
+*.p8
+.env*
+
+# Local planning notes and agent workspaces
+docs/superpowers/
+.superpowers/
+.claude/
+CLAUDE.local.md
+
+# Editor, OS and log clutter
+.DS_Store
+.vscode/
+.idea/
+*.log
+coverage/

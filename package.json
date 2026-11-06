@@ -1,0 +1,32 @@
+{
+  "name": "asc-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only MCP server for App Store Connect. Runs locally over stdio with your own API key.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "asc-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "smoke": "npm run build && node scripts/smoke-test.mjs",
+    "store-key": "node scripts/store-key.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2"
+  }
+}
