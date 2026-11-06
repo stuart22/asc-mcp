@@ -99,3 +99,11 @@ test("testflight index lists the new tidied look-ups", async () => {
   const out = await runLookup(toolDeps(), "testflight", {});
   for (const name of ["groups", "testers", "group_builds", "feedback", "crashes"]) assert.match(out, new RegExp(`• ${name} — `));
 });
+
+test("a long feedback page that is cut keeps its paging cursor", async () => {
+  const data = Array.from({ length: 200 }, (_, i) => ({ type: "betaFeedbackScreenshotSubmissions", id: `f${i}`, attributes: { createdDate: "2026-11-04T10:00:00Z", comment: "x".repeat(380) } }));
+  const d = toolDeps(on("/v1/apps/100/betaFeedbackScreenshotSubmissions", { data, links: { next: "https://api.appstoreconnect.apple.com/v1/apps/100/betaFeedbackScreenshotSubmissions?cursor=NEXT" } }));
+  const out = await listFeedback(d, { app: "Acme", limit: 200 });
+  assert.match(out, /Output cut at 12,000 characters/);
+  assert.match(out, /More available — call again with cursor: "NEXT"\.$/);
+});

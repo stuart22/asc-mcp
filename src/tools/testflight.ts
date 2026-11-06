@@ -100,7 +100,7 @@ async function listSubmissions(deps: ToolDeps, kind: FeedbackKind, input: { app:
     return `• ${parts.join(" · ")}`;
   });
   const header = `TestFlight ${kind.title} for ${appLabel(app)} — ${items.length} shown, newest first:`;
-  return capOutput(render(header, [UNTRUSTED_NOTE, ...lines], pagingFooter(items.length, doc)));
+  return capOutput(render(header, [UNTRUSTED_NOTE, ...lines]), undefined, pagingFooter(items.length, doc));
 }
 
 export function listFeedback(deps: ToolDeps, input: { app: string; limit?: number; cursor?: string }): Promise<string> {

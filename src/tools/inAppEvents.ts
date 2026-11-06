@@ -42,5 +42,5 @@ export async function listInAppEvents(deps: ToolDeps, input: { app: string; stat
       lines.push(`  ${la.locale ?? "—"}: ${la.name ?? "—"}${la.shortDescription ? ` — ${truncate(la.shortDescription, 200)}` : ""}`);
     }
   }
-  return capOutput(render(`In-app events for ${appLabel(app)} — ${events.length} shown:`, lines, pagingFooter(events.length, doc)));
+  return capOutput(render(`In-app events for ${appLabel(app)} — ${events.length} shown:`, lines), undefined, pagingFooter(events.length, doc));
 }

@@ -48,5 +48,5 @@ export async function listCustomPages(deps: ToolDeps, input: { app: string; limi
       if (l.attributes?.promotionalText) lines.push(`  ${l.attributes.locale ?? "—"}: ${truncate(l.attributes.promotionalText.replace(/\s*\n\s*/g, " "), 170)}`);
     }
   }
-  return capOutput(render(`Custom product pages for ${appLabel(app)} — ${pages.length} shown:`, lines, pagingFooter(pages.length, doc)));
+  return capOutput(render(`Custom product pages for ${appLabel(app)} — ${pages.length} shown:`, lines), undefined, pagingFooter(pages.length, doc));
 }
