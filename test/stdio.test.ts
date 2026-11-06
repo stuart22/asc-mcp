@@ -52,14 +52,14 @@ test("real server: stderr has only the startup line and nothing secret reaches e
   await chmod(keyFile, 0o644); // readable by others -> server must refuse before reading or using it
   try {
     const { stdout, stderr, results } = await run({ ASC_KEY_ID: "ABCDE12345", ASC_PRIVATE_KEY: keyFile }, [
-      { name: "list_builds", arguments: { app: "Acme" } },
-      { name: "list_customer_reviews", arguments: { app: "Acme" } },
+      { name: "builds", arguments: { lookup: "list", app: "Acme" } },
+      { name: "reviews", arguments: { lookup: "/v1/apps/{id}/customerReviews", app: "Acme" } },
     ]);
     for (const r of results) {
       assert.equal(r.result.isError, true);
       assert.match(r.result.content[0].text, /chmod 600/);
     }
-    assert.deepEqual(stderr.trim().split("\n"), ["asc-mcp 0.1.0 ready (individual key ABCDE12345, key from file, read-only)"]);
+    assert.deepEqual(stderr.trim().split("\n"), ["asc-mcp 0.2.0 ready (individual key ABCDE12345, key from file, read-only)"]);
     const body = pem.split("\n").slice(1, -2).join("");
     for (const chunk of [body.slice(0, 24), body.slice(-24)]) {
       assert.equal((stdout + stderr).includes(chunk), false, "key material leaked");
@@ -71,7 +71,14 @@ test("real server: stderr has only the startup line and nothing secret reaches e
 });
 
 test("real server: missing config is explained on stderr and in tool results", async () => {
-  const { stderr, results } = await run({}, [{ name: "list_apps", arguments: {} }]);
+  const { stderr, results } = await run({}, [{ name: "apps", arguments: { lookup: "list" } }]);
   assert.match(stderr, /configuration problem — ASC_KEY_ID is not set/);
   assert.match(results[0].result.content[0].text, /ASC_KEY_ID is not set/);
+});
+
+test("real server: unknown hidden areas are named on stderr", async () => {
+  const { stderr } = await run({ ASC_HIDE_AREAS: "nope, game_center" }, []);
+  const lines = stderr.trim().split("\n");
+  assert.ok(lines.some((l) => /^asc-mcp: ASC_HIDE_AREAS has unknown areas: nope\. Known: apps, product_page,/.test(l)), stderr);
+  assert.match(lines.at(-1)!, /ready/);
 });

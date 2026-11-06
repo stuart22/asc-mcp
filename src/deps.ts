@@ -35,7 +35,7 @@ export function createDeps(
       throw new ConfigError(message);
     };
     return {
-      deps: { client: { get: fail }, apps: { resolve: fail, listAll: fail }, now: Date.now },
+      deps: { client: { get: fail, getText: fail }, apps: { resolve: fail, listAll: fail }, now: Date.now },
       summary: "not configured",
       problem: message,
     };

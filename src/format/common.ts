@@ -4,7 +4,7 @@ import type { Doc, Linkage, Platform, Resource } from "../asc/types.ts";
 
 /** What every tool function receives. */
 export type ToolDeps = {
-  client: Pick<AscClient, "get">;
+  client: Pick<AscClient, "get" | "getText">;
   apps: Pick<AppResolver, "resolve" | "listAll">;
   /** Clock in milliseconds. */
   now: () => number;
