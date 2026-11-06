@@ -1,0 +1,48 @@
+{
+  "openapi": "3.0.1",
+  "info": { "title": "Mini", "version": "9.9" },
+  "paths": {
+    "/v1/apps": {
+      "get": {
+        "tags": ["Apps"],
+        "parameters": [{ "name": "limit", "in": "query", "schema": { "type": "integer", "maximum": 200 } }],
+        "responses": { "200": { "content": { "application/json": {} } } }
+      },
+      "post": {
+        "tags": ["Apps"],
+        "responses": { "201": { "content": { "application/json": {} } } }
+      }
+    },
+    "/v1/apps/{id}/appEvents": {
+      "get": {
+        "tags": ["Apps"],
+        "parameters": [
+          { "name": "filter[eventState]", "in": "query", "schema": { "type": "array", "items": { "type": "string", "enum": ["DRAFT", "PUBLISHED"] } } },
+          { "name": "fields[appEvents]", "in": "query", "schema": { "type": "array", "items": { "type": "string", "enum": ["referenceName", "badge"] } } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "maximum": 50 } }
+        ],
+        "responses": { "200": { "content": { "application/json": {} } } }
+      },
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }]
+    },
+    "/v1/apps/{id}/relationships/appEvents": {
+      "get": { "tags": ["Apps"], "responses": { "200": { "content": { "application/json": {} } } } }
+    },
+    "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/{id}/values": {
+      "get": { "tags": ["InAppPurchaseOfferCodeOneTimeUseCodes"], "responses": { "200": { "content": { "text/csv": {} } } } }
+    },
+    "/v1/salesReports": {
+      "get": {
+        "tags": ["SalesReports"],
+        "parameters": [{ "name": "filter[vendorNumber]", "in": "query", "required": true, "schema": { "type": "array", "items": { "type": "string" } } }],
+        "responses": { "200": { "content": { "application/a-gzip": {} } } }
+      }
+    },
+    "/v1/apps/{id}/perfPowerMetrics": {
+      "get": {
+        "tags": ["Apps"],
+        "responses": { "200": { "content": { "application/vnd.apple.xcode-metrics+json": {} } } }
+      }
+    }
+  }
+}

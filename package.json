@@ -19,7 +19,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test \"test/**/*.test.ts\"",
     "smoke": "npm run build && node scripts/smoke-test.mjs",
-    "store-key": "node scripts/store-key.ts"
+    "store-key": "node scripts/store-key.ts",
+    "catalog": "node scripts/build-catalog.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.4.0",
