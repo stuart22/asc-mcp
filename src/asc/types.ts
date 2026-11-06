@@ -72,3 +72,18 @@ export type CustomerReviewAttributes = {
   createdDate?: string;
   territory?: string;
 };
+
+export type AppStoreVersionLocalizationAttributes = {
+  locale?: string;
+  description?: string;
+  keywords?: string;
+  whatsNew?: string;
+  promotionalText?: string;
+  marketingUrl?: string;
+  supportUrl?: string;
+};
+
+export type AppInfoAttributes = { state?: string; appStoreState?: string };
+export type AppInfoLocalizationAttributes = { locale?: string; name?: string; subtitle?: string };
+export type AppScreenshotSetAttributes = { screenshotDisplayType?: string };
+export type AppPreviewSetAttributes = { previewType?: string };

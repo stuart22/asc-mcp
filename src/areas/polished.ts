@@ -4,6 +4,7 @@ import { PLATFORMS } from "../asc/types.ts";
 import type { ToolDeps } from "../format/common.ts";
 import { getApp, listApps } from "../tools/apps.ts";
 import { BUILD_STATUSES, listBuilds } from "../tools/builds.ts";
+import { listing, screenshots } from "../tools/productPage.ts";
 import { listCustomerReviews } from "../tools/reviews.ts";
 import { listBetaGroups, listBetaTesters } from "../tools/testflight.ts";
 import { listAppStoreVersions } from "../tools/versions.ts";
@@ -26,6 +27,7 @@ const lower = (v: unknown) => (typeof v === "string" ? v.trim().toLowerCase() : 
 export const platformArg = z.preprocess(upper, z.enum(PLATFORMS)).optional();
 const text = (max: number) => z.string().trim().min(1).max(max).optional();
 const none = z.object({}).strict();
+const pageArgs = z.object({ version: text(50), platform: platformArg, locale: text(20) }).strict();
 
 /** Narrows the app after runLookup has checked it is present. */
 export const appOf = (input: PolishedInput): string => input.app ?? "";
@@ -57,6 +59,22 @@ export const POLISHED: Record<AreaName, readonly PolishedLookup[]> = {
       needsApp: true,
       args: z.object({ platform: platformArg }).strict(),
       run: (deps, i) => listAppStoreVersions(deps, { app: appOf(i), platform: i.args.platform as never, limit: i.limit }),
+    },
+    {
+      name: "listing",
+      summary: "Store listing text per language: name, subtitle, promo text, description, keywords, what's new, URLs (editable version, else live)",
+      argsHelp: "version, platform, locale",
+      needsApp: true,
+      args: pageArgs,
+      run: (deps, i) => listing(deps, { app: appOf(i), ...(i.args as object) }),
+    },
+    {
+      name: "screenshots",
+      summary: "Screenshot and preview counts per language and device type",
+      argsHelp: "version, platform, locale",
+      needsApp: true,
+      args: pageArgs,
+      run: (deps, i) => screenshots(deps, { app: appOf(i), ...(i.args as object) }),
     },
   ],
   custom_product_pages: [],
