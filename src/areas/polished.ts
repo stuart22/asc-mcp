@@ -1,9 +1,11 @@
 // Hand-tidied look-ups: the everyday questions, with answers shaped for reading.
 import { z } from "zod";
-import { PLATFORMS } from "../asc/types.ts";
+import { APP_EVENT_STATES, PLATFORMS } from "../asc/types.ts";
 import type { ToolDeps } from "../format/common.ts";
 import { getApp, listApps } from "../tools/apps.ts";
 import { BUILD_STATUSES, listBuilds } from "../tools/builds.ts";
+import { listCustomPages } from "../tools/customPages.ts";
+import { listInAppEvents } from "../tools/inAppEvents.ts";
 import { listing, screenshots } from "../tools/productPage.ts";
 import { listCustomerReviews } from "../tools/reviews.ts";
 import { listBetaGroups, listBetaTesters } from "../tools/testflight.ts";
@@ -77,8 +79,26 @@ export const POLISHED: Record<AreaName, readonly PolishedLookup[]> = {
       run: (deps, i) => screenshots(deps, { app: appOf(i), ...(i.args as object) }),
     },
   ],
-  custom_product_pages: [],
-  in_app_events: [],
+  custom_product_pages: [
+    {
+      name: "list",
+      summary: "Custom product pages: visible or hidden, latest version state, URL, promo text per language",
+      argsHelp: "",
+      needsApp: true,
+      args: none,
+      run: (deps, i) => listCustomPages(deps, { app: appOf(i), limit: i.limit, cursor: i.cursor }),
+    },
+  ],
+  in_app_events: [
+    {
+      name: "list",
+      summary: "In-app events: state, badge, priority, purpose, publish and run dates, name and short description per language",
+      argsHelp: "state",
+      needsApp: true,
+      args: z.object({ state: z.preprocess(upper, z.enum(APP_EVENT_STATES)).optional() }).strict(),
+      run: (deps, i) => listInAppEvents(deps, { app: appOf(i), state: i.args.state as never, limit: i.limit, cursor: i.cursor }),
+    },
+  ],
   testflight: [
     {
       name: "groups",

@@ -19,6 +19,15 @@ export type AreaInput = {
 
 const SAFE_ID = /^[A-Za-z0-9_-]{1,200}$/;
 
+type Issue = { path: PropertyKey[]; message: string; code?: string; values?: unknown[]; keys?: string[] };
+
+function describeIssue(i: Issue): string {
+  const where = i.path.length ? `${i.path.map(String).join(".")}: ` : "";
+  if (i.code === "invalid_value" && i.values) return `${where}must be one of ${i.values.map(String).join(", ")}`;
+  if (i.code === "unrecognized_keys" && i.keys) return `unknown param ${i.keys.join(", ")}`;
+  return where + i.message;
+}
+
 export async function runLookup(deps: ToolDeps, area: AreaName, input: AreaInput): Promise<string> {
   const polished = POLISHED[area];
   const lookup = input.lookup?.trim();
@@ -28,7 +37,7 @@ export async function runLookup(deps: ToolDeps, area: AreaName, input: AreaInput
   if (p) {
     const parsed = p.args.safeParse(input.params ?? {});
     if (!parsed.success) {
-      const issues = parsed.error.issues.map((i) => (i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message)).join("; ");
+      const issues = parsed.error.issues.map(describeIssue).join("; ");
       throw new Error(`Invalid params for ${area} ${p.name} (${issues}). Accepted params: ${p.argsHelp || "none"}.`);
     }
     if (p.needsApp && !input.app) throw new Error(`The ${p.name} look-up needs \`app\` (name, bundle ID or Apple ID).`);
