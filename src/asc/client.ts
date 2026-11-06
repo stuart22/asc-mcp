@@ -1,3 +1,4 @@
+import { gunzipSync } from "node:zlib";
 import type { Doc } from "./types.ts";
 
 /** The only host this server ever talks to. */
@@ -22,8 +23,8 @@ export type AscClientOptions = {
 };
 
 /**
- * Read-only App Store Connect client. It deliberately has no method other than
- * `get`, so nothing built on it can change data in App Store Connect.
+ * Read-only App Store Connect client. Its only public methods are `get` and
+ * `getText`, both of which send GET, so nothing built on it can change data.
  * It never logs, and its errors never contain the token or request headers.
  */
 export class AscClient {
@@ -38,6 +39,19 @@ export class AscClient {
   }
 
   async get<A = Record<string, unknown>>(path: string, query: Query = {}): Promise<Doc<A>> {
+    const res = await this.#request(path, query, "application/json");
+    return (await res.json()) as Doc<A>;
+  }
+
+  /** Reads a non-JSON response (CSV, gzipped TSV, Apple JSON media types) as UTF-8 text. */
+  async getText(path: string, query: Query, accept: string): Promise<string> {
+    const res = await this.#request(path, query, accept);
+    const bytes = Buffer.from(await res.arrayBuffer());
+    const gzipped = (res.headers.get("content-type") ?? "").includes("gzip");
+    return (gzipped ? gunzipSync(bytes) : bytes).toString("utf8");
+  }
+
+  async #request(path: string, query: Query, accept: string): Promise<Response> {
     if (!/^\/v\d+\/[A-Za-z0-9/_-]+$/.test(path) || path.includes("..")) {
       throw new Error(`Refusing to request an unexpected API path.`);
     }
@@ -51,7 +65,7 @@ export class AscClient {
     try {
       res = await this.#fetch(url, {
         method: "GET",
-        headers: { authorization: `Bearer ${token}`, accept: "application/json" },
+        headers: { authorization: `Bearer ${token}`, accept },
         signal: AbortSignal.timeout(this.#timeoutMs),
       });
     } catch (err) {
@@ -67,7 +81,7 @@ export class AscClient {
     if (!res.ok) {
       throw new AscApiError(res.status, scrub(describeError(res.status, await appleDetail(res)), token));
     }
-    return (await res.json()) as Doc<A>;
+    return res;
   }
 }
 
