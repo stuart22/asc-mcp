@@ -47,7 +47,8 @@ export class AscClient {
   async getText(path: string, query: Query, accept: string): Promise<string> {
     const res = await this.#request(path, query, accept);
     const bytes = Buffer.from(await res.arrayBuffer());
-    const gzipped = (res.headers.get("content-type") ?? "").includes("gzip");
+    // Decide by the gzip magic bytes, not the content type: the body may already have been decoded in transit.
+    const gzipped = bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
     return (gzipped ? gunzipSync(bytes) : bytes).toString("utf8");
   }
 

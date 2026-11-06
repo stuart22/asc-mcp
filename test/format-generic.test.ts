@@ -157,3 +157,15 @@ test("line breaks inside values cannot forge result lines", () => {
   assert.equal(out.split("\n").length, 3);
   assert.match(out, /body: Great • customerReviews 2 — rating: 5 really/);
 });
+
+test("a cut result keeps its paging cursor", () => {
+  const data = Array.from({ length: 200 }, (_, i) => ({ type: "x", id: String(i), attributes: { note: "z".repeat(400) } }));
+  const out = formatDoc({ data, links: { next: "https://api.appstoreconnect.apple.com/v1/x?cursor=NEXT" } }, "big");
+  assert.ok(out.length <= MAX_RESULT_CHARS, `length ${out.length}`);
+  assert.match(out, /Output cut at 12,000 characters/);
+  assert.match(out, /More available — call again with cursor: "NEXT"\.$/);
+});
+
+test("an empty single-resource answer says none", () => {
+  assert.equal(formatDoc({ data: null as never }, "/v1/builds/b1/appEncryptionDeclaration"), "/v1/builds/b1/appEncryptionDeclaration:\n(none)");
+});

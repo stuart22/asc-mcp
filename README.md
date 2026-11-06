@@ -89,6 +89,8 @@ Claude Desktop (`claude_desktop_config.json`, full paths required):
 
 ## Security note
 
+The server only reads. It never shows App Review demo-account passwords, signed download or upload links, or certificate and profile contents. Text written by customers or testers is labelled so Claude treats it as quotes, not instructions.
+
 Any program running as you can read the Keychain, including Claude's shell tool. Since customer reviews are untrusted text, consider denying key access in `~/.claude/settings.json`:
 
 ```json

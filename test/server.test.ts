@@ -141,7 +141,8 @@ test("no secret appears in tool results", async () => {
     const pemBody = pem.split("\n")[1]!;
     const outputs = [];
     for (const name of TOOL_NAMES) {
-      if (POLISHED[name].some((p) => p.name === "list")) outputs.push(JSON.stringify(await s.callTool(name, { lookup: "list", app: "Acme" })));
+      const list = POLISHED[name].find((p) => p.name === "list");
+      if (list) outputs.push(JSON.stringify(await s.callTool(name, { lookup: "list", ...(list.needsApp ? { app: "Acme" } : {}) })));
     }
     assert.match(outputs[0]!, /401/);
     for (const name of TOOL_NAMES) outputs.push(JSON.stringify(await s.callTool(name, {})));

@@ -128,3 +128,8 @@ test("getText refuses unexpected paths", async () => {
   await assert.rejects(new AscClient({ tokens, fetch: f }).getText("https://evil.example/v1/x", {}, "text/csv"), /unexpected API path/);
   assert.equal(f.requests.length, 0);
 });
+
+test("getText reads a gzip-labelled body that arrives already decompressed", async () => {
+  const f = rawFetch("h1\th2\n", "application/a-gzip");
+  assert.equal(await new AscClient({ tokens, fetch: f }).getText("/v1/salesReports", {}, "application/a-gzip"), "h1\th2\n");
+});

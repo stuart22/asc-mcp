@@ -119,3 +119,19 @@ test("product_page tool exposes listing and screenshots", async () => {
   assert.match(await runLookup(d, "product_page", {}), /• listing — .*\(needs app; params: version, platform, locale\)/);
   assert.match(await runLookup(d, "product_page", {}), /• screenshots — /);
 });
+
+test("deprecated appStoreState names are understood for live and removed versions", async () => {
+  const old = (id: string, versionString: string, appStoreState: string, createdDate: string) => ({
+    type: "appStoreVersions",
+    id,
+    attributes: { platform: "IOS", versionString, appStoreState, createdDate },
+  });
+  const d = toolDeps(
+    on("/v1/apps/100/appStoreVersions", { data: [old("v9", "2.0.0", "DEVELOPER_REMOVED_FROM_SALE", "2026-11-02T00:00:00Z"), old("v1", "1.3.0", "READY_FOR_SALE", "2026-10-01T00:00:00Z")] }),
+    versionLocs("v1"),
+    ...allInfo,
+  );
+  const out = await listing(d, { app: "Acme" });
+  assert.match(out, /version 1\.3\.0 · iOS · ready for sale:/);
+  assert.match(out, /name: Acme\n/);
+});

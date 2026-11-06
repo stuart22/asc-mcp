@@ -124,3 +124,17 @@ test("app on a look-up that isn't per-app is refused without a request", async (
   await assert.rejects(runLookup(d, "apps", { lookup: "/v1/apps", app: "Acme" }), /isn't per-app; `app` can't narrow it/);
   assert.equal(d.f.requests.length, 0);
 });
+
+test("tidied look-ups refuse app or id they would ignore, without a request", async () => {
+  const d = toolDeps();
+  await assert.rejects(runLookup(d, "apps", { lookup: "list", app: "Acme" }), /`app` doesn't apply to the list look-up/);
+  await assert.rejects(runLookup(d, "builds", { lookup: "list", app: "Acme", id: "b1" }), /`id` doesn't apply to the list look-up/);
+  assert.equal(d.f.requests.length, 0);
+});
+
+test("explain on a tidied look-up describes it without a request", async () => {
+  const d = toolDeps();
+  const out = await runLookup(d, "builds", { lookup: "list", explain: true });
+  assert.match(out, /^list — Builds, newest first.*\nNeeds `app`\. Params: status, version, platform\.$/s);
+  assert.equal(d.f.requests.length, 0);
+});

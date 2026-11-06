@@ -16,8 +16,9 @@ import { fetchAllVersions, versionState } from "./versions.ts";
 
 export type ProductPageInput = { app: string; version?: string; platform?: Platform; locale?: string };
 
-const LIVE = "READY_FOR_DISTRIBUTION";
-const NOT_EDITABLE = new Set([LIVE, "REPLACED_WITH_NEW_VERSION", "REMOVED_FROM_SALE"]);
+// Live and finished states, including the deprecated appStoreState names Apple may still send.
+const LIVE = new Set(["READY_FOR_DISTRIBUTION", "READY_FOR_SALE", "PREORDER_READY_FOR_SALE"]);
+const NOT_EDITABLE = new Set([...LIVE, "REPLACED_WITH_NEW_VERSION", "REMOVED_FROM_SALE", "DEVELOPER_REMOVED_FROM_SALE"]);
 
 type Version = Resource<AppStoreVersionAttributes>;
 type Chosen = { app: AppRef; version: Version; live: boolean; label: string };
@@ -36,12 +37,12 @@ async function chooseVersion(deps: ToolDeps, input: ProductPageInput): Promise<C
     }
   } else {
     version =
-      versions.find((v) => !NOT_EDITABLE.has(versionState(v.attributes ?? {}) ?? "")) ?? versions.find((v) => versionState(v.attributes ?? {}) === LIVE);
+      versions.find((v) => !NOT_EDITABLE.has(versionState(v.attributes ?? {}) ?? "")) ?? versions.find((v) => LIVE.has(versionState(v.attributes ?? {}) ?? ""));
     if (!version) return `No editable or live App Store version found for ${appLabel(app)}.`;
   }
   const a = version.attributes ?? {};
   const state = versionState(a);
-  return { app, version, live: state === LIVE, label: `version ${a.versionString ?? "—"} · ${fmtPlatform(a.platform)} · ${humanize(state)}` };
+  return { app, version, live: LIVE.has(state ?? ""), label: `version ${a.versionString ?? "—"} · ${fmtPlatform(a.platform)} · ${humanize(state)}` };
 }
 
 function filterLocale<T extends { locale?: string }>(items: Resource<T>[], locale: string | undefined): Resource<T>[] {
@@ -62,10 +63,9 @@ async function versionLocalizations(deps: ToolDeps, versionId: string, fields: s
 
 async function appInfoNames(deps: ToolDeps, appId: string, live: boolean): Promise<Map<string, AppInfoLocalizationAttributes>> {
   const infos = asList(await deps.client.get<AppInfoAttributes>(`/v1/apps/${appId}/appInfos`, { "fields[appInfos]": "state,appStoreState", limit: 200 }));
-  const stateOf = (i: Resource<AppInfoAttributes>) => i.attributes?.state ?? i.attributes?.appStoreState;
-  const info = live
-    ? infos.find((i) => stateOf(i) === LIVE)
-    : infos.find((i) => stateOf(i) !== LIVE && stateOf(i) !== "REPLACED_WITH_NEW_INFO") ?? infos.find((i) => stateOf(i) === LIVE);
+  const isLive = (i: Resource<AppInfoAttributes>) => LIVE.has(i.attributes?.state ?? i.attributes?.appStoreState ?? "");
+  const replaced = (i: Resource<AppInfoAttributes>) => (i.attributes?.state ?? i.attributes?.appStoreState) === "REPLACED_WITH_NEW_INFO";
+  const info = live ? infos.find(isLive) : infos.find((i) => !isLive(i) && !replaced(i)) ?? infos.find(isLive);
   const names = new Map<string, AppInfoLocalizationAttributes>();
   if (!info) return names;
   const locs = asList(

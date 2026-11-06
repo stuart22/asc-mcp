@@ -35,6 +35,12 @@ export async function runLookup(deps: ToolDeps, area: AreaName, input: AreaInput
 
   const p = polished.find((x) => x.name === lookup.toLowerCase());
   if (p) {
+    if (input.explain) {
+      const needs = p.needsApp ? "Needs `app`. " : "";
+      return `${p.name} — ${p.summary}\n${needs}Params: ${p.argsHelp || "none"}.`;
+    }
+    if (input.id) throw new Error(`\`id\` doesn't apply to the ${p.name} look-up. Use an API path from the index to look up one item by id.`);
+    if (input.app && !p.needsApp) throw new Error(`\`app\` doesn't apply to the ${p.name} look-up.${p.argsHelp ? ` Params: ${p.argsHelp}.` : ""}`);
     const parsed = p.args.safeParse(input.params ?? {});
     if (!parsed.success) {
       const issues = parsed.error.issues.map(describeIssue).join("; ");

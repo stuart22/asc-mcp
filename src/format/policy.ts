@@ -59,12 +59,14 @@ const DEFAULT_ADVICE = "Narrow it with a smaller limit, filters, or fields[...] 
 
 /**
  * Keeps a result under MAX_RESULT_CHARS, saying how to narrow it. Cuts at a line
- * boundary unless that would throw away most of the room (one long line).
+ * boundary unless that would throw away most of the room (one long line). A footer
+ * (the paging cursor) is always kept.
  */
-export function capOutput(text: string, advice = DEFAULT_ADVICE): string {
-  if (text.length <= MAX_RESULT_CHARS) return text;
+export function capOutput(text: string, advice = DEFAULT_ADVICE, footer = ""): string {
+  const tail = footer ? `\n${footer}` : "";
+  if (text.length + tail.length <= MAX_RESULT_CHARS) return text + tail;
   const note = `…Output cut at 12,000 characters. ${advice}`;
-  const room = MAX_RESULT_CHARS - note.length - 1;
+  const room = MAX_RESULT_CHARS - note.length - 1 - tail.length;
   const cut = text.lastIndexOf("\n", room);
-  return (cut > room / 2 ? text.slice(0, cut) : text.slice(0, room)) + "\n" + note;
+  return (cut > room / 2 ? text.slice(0, cut) : text.slice(0, room)) + "\n" + note + tail;
 }

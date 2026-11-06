@@ -55,12 +55,10 @@ export function formatDoc(doc: Doc<Record<string, unknown>>, title: string): str
   const single = !Array.isArray(doc.data);
   const lines = [single ? `${title}:` : `${title} — ${main.length} shown:`];
   if ([...main, ...included].some((r) => UNTRUSTED_TYPES.has(r.type))) lines.push(UNTRUSTED_NOTE);
-  if (!single && main.length === 0) lines.push("(none)");
+  if (main.length === 0) lines.push("(none)");
   lines.push(...main.map(resourceLine));
   if (included.length) lines.push("Related:", ...included.map(resourceLine));
-  const footer = pagingFooter(main.length, doc);
-  if (footer) lines.push(footer);
-  return capOutput(lines.join("\n"));
+  return capOutput(lines.join("\n"), undefined, pagingFooter(main.length, doc));
 }
 
 function splitRow(line: string, sep: "," | "\t"): string[] {

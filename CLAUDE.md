@@ -21,7 +21,7 @@ Locally-run, read-only MCP server for App Store Connect.
 
 - TypeScript run directly by Node in tests (type stripping): relative imports use `.ts` extensions; erasable syntax only (no enums, namespaces, parameter properties).
 - Everything below `src/index.ts` receives its dependencies (fetch, execFile, clock) as arguments so tests can inject fakes.
-- Tool output is compact text for Claude, not raw Apple JSON.
+- Tool output is compact text for Claude, not raw Apple JSON. The one exception: Apple's metrics/diagnostics media types (not JSON:API) are passed through compacted and capped.
 
 ## Commands
 
