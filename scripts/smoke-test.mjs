@@ -1,6 +1,7 @@
 // Manual smoke test against the REAL App Store Connect API, using your own key.
-// It starts the built server exactly as Claude would (stdio), then calls each
-// read-only tool and prints what Claude would see.
+// It starts the built server exactly as Claude would (stdio), asks every area
+// tool for its index (no network), then runs the everyday look-ups and prints
+// what Claude would see.
 //
 //   ASC_KEY_ID=XXXXXXXXXX npm run smoke -- "My App"
 //
@@ -73,18 +74,25 @@ try {
   const tools = (await request("tools/list", {})).result.tools;
   console.log(`Tools: ${tools.map((t) => t.name).join(", ")}`);
 
-  const apps = await call("list_apps", { limit: 10 });
+  for (const t of tools) {
+    const index = await call(t.name, {});
+    if (!index.includes("read-only")) failures++;
+  }
+
+  const apps = await call("apps", { lookup: "list", limit: 10 });
   // Default to the first app listed ("• Name · bundle.id · Apple ID 123 …").
   const app = appArg ?? /Apple ID (\d+)/.exec(apps)?.[1];
   if (!app) throw new Error("No app to test with. Pass one: npm run smoke -- \"My App\"");
 
-  await call("get_app", { app });
-  await call("list_builds", { app, limit: 5 });
-  await call("list_builds", { app, status: "processing" });
-  await call("list_beta_groups", { app, limit: 10 });
-  await call("list_beta_testers", { app, limit: 5 });
-  await call("list_app_store_versions", { app, limit: 5 });
-  await call("list_customer_reviews", { app, limit: 3 });
+  await call("apps", { lookup: "details", app });
+  await call("apps", { lookup: "/v1/apps/{id}/appInfos", app });
+  await call("builds", { lookup: "list", app, limit: 5 });
+  await call("product_page", { lookup: "listing", app });
+  await call("custom_product_pages", { lookup: "list", app, limit: 5 });
+  await call("in_app_events", { lookup: "list", app, limit: 5 });
+  await call("testflight", { lookup: "groups", app, limit: 10 });
+  await call("testflight", { lookup: "feedback", app, limit: 3 });
+  await call("reviews", { lookup: "list", app, limit: 3 });
 } catch (err) {
   failures++;
   console.error(`\nSmoke test aborted: ${err.message}`);
@@ -92,5 +100,5 @@ try {
   child.kill();
 }
 
-console.log(failures ? `\n✗ ${failures} call(s) failed — see messages above.` : "\n✓ All tools answered.");
+console.log(failures ? `\n✗ ${failures} call(s) failed — see messages above.` : "\n✓ All look-ups answered.");
 process.exitCode = failures ? 1 : 0;

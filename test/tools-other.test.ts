@@ -24,7 +24,7 @@ const versionsDoc = {
 const groupsDoc = {
   data: [
     { type: "betaGroups", id: "g1", attributes: { name: "Internal Testers", isInternalGroup: true, publicLinkEnabled: false } },
-    { type: "betaGroups", id: "g2", attributes: { name: "Public Beta", isInternalGroup: false, publicLinkEnabled: true } },
+    { type: "betaGroups", id: "g2", attributes: { name: "Public Beta", isInternalGroup: false, publicLinkEnabled: true, publicLink: "https://testflight.apple.com/join/AbC123", publicLinkLimitEnabled: true, publicLinkLimit: 500, feedbackEnabled: true } },
     { type: "betaGroups", id: "g3", attributes: { name: "Public Press", isInternalGroup: false } },
   ],
 };
@@ -65,8 +65,11 @@ test("beta groups line format", async () => {
   const d = toolDeps(allApps, on("/v1/apps/100/betaGroups", groupsDoc));
   const out = await listBetaGroups(d, { app: "Acme" });
   assert.match(out, /^TestFlight groups for Acme \(com\.acme\.app\) — 3 shown:/);
-  assert.match(out, /• Internal Testers · internal · public link off/);
-  assert.match(out, /• Public Beta · external · public link on/);
+  const lines = out.split("\n");
+  assert.equal(lines[1], "• Internal Testers · internal · public link off · feedback off");
+  assert.equal(lines[2], "• Public Beta · external · public link on (https://testflight.apple.com/join/AbC123, limit 500) · feedback on");
+  const q = d.f.requests.find((r) => r.url.pathname === "/v1/apps/100/betaGroups")!.url.searchParams;
+  assert.match(q.get("fields[betaGroups]")!, /publicLink,publicLinkLimitEnabled,publicLinkLimit,feedbackEnabled/);
 });
 
 test("testers by group name use the group's testers endpoint", async () => {

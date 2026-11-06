@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { AscClient, AscApiError, nextCursor, ASC_BASE_URL } from "../src/asc/client.ts";
+import { gzipSync } from "node:zlib";
 import { fakeFetch, on } from "./helpers.ts";
 
 const SECRET_TOKEN = "SECRET.TOKEN.SIGNATURE";
@@ -84,7 +85,51 @@ test("nextCursor extracts the cursor from links.next", () => {
   assert.equal(nextCursor({ data: [] }), undefined);
 });
 
-test("client exposes no method other than get (read-only by construction)", () => {
+test("client exposes only read methods", () => {
   const names = Object.getOwnPropertyNames(AscClient.prototype).filter((n) => n !== "constructor");
-  assert.deepEqual(names, ["get"]);
+  assert.deepEqual(names, ["get", "getText"]);
+});
+
+function rawFetch(body: Uint8Array | string, contentType: string, status = 200) {
+  const requests: RequestInit[] = [];
+  const fn = (async (_url: URL, init?: RequestInit) => {
+    requests.push(init ?? {});
+    return new Response(body, { status, headers: { "content-type": contentType } });
+  }) as unknown as typeof fetch;
+  return Object.assign(fn, { requests });
+}
+
+test("getText returns CSV text with the requested accept header", async () => {
+  const f = rawFetch("a,b\n1,2\n", "text/csv");
+  const text = await new AscClient({ tokens, fetch: f }).getText("/v1/x/123/values", {}, "text/csv");
+  assert.equal(text, "a,b\n1,2\n");
+  assert.equal(new Headers(f.requests[0]!.headers).get("accept"), "text/csv");
+  assert.equal(f.requests[0]!.method, "GET");
+});
+
+test("getText gunzips gzip responses", async () => {
+  const f = rawFetch(gzipSync("h1\th2\nx\ty\n"), "application/a-gzip");
+  assert.equal(await new AscClient({ tokens, fetch: f }).getText("/v1/salesReports", { "filter[vendorNumber]": "1" }, "application/a-gzip"), "h1\th2\nx\ty\n");
+});
+
+test("getText maps errors like get", async () => {
+  const f = rawFetch(JSON.stringify(appleError(403, `nope ${SECRET_TOKEN}`)), "application/json", 403);
+  await assert.rejects(new AscClient({ tokens, fetch: f }).getText("/v1/salesReports", {}, "application/a-gzip"), (e: unknown) => {
+    assert.ok(e instanceof AscApiError);
+    assert.equal(e.status, 403);
+    assert.match(e.message, /role|permission/i);
+    assert.equal(e.message.includes(SECRET_TOKEN), false);
+    return true;
+  });
+});
+
+test("getText refuses unexpected paths", async () => {
+  const f = rawFetch("", "text/csv");
+  await assert.rejects(new AscClient({ tokens, fetch: f }).getText("https://evil.example/v1/x", {}, "text/csv"), /unexpected API path/);
+  assert.equal(f.requests.length, 0);
+});
+
+test("getText reads a gzip-labelled body that arrives already decompressed", async () => {
+  const f = rawFetch("h1\th2\n", "application/a-gzip");
+  assert.equal(await new AscClient({ tokens, fetch: f }).getText("/v1/salesReports", {}, "application/a-gzip"), "h1\th2\n");
 });
