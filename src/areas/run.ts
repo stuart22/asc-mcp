@@ -62,6 +62,9 @@ export async function runLookup(deps: ToolDeps, area: AreaName, input: AreaInput
     if (!SAFE_ID.test(id)) throw new Error("`id` must be an Apple ID: letters, digits, '-' or '_' only.");
     path = path.replace("{id}", id);
   } else if (input.app) {
+    if (!entry.params.some((q) => q.name === "filter[app]" || q.name === "filter[apps]")) {
+      throw new Error(`${entry.path} isn't per-app; \`app\` can't narrow it. Call again without \`app\`, or use explain: true to see its filters.`);
+    }
     appId = (await deps.apps.resolve(input.app)).id;
   }
 

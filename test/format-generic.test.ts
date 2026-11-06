@@ -119,3 +119,41 @@ test("formats CSV and TSV with row limit", () => {
 test("compacts Apple JSON", () => {
   assert.equal(formatAppleJson('{\n  "a": [1, 2],\n  "b": {"c": true}\n}', "metrics"), 'metrics:\n{"a":[1,2],"b":{"c":true}}');
 });
+
+test("large Apple JSON is cut, not emptied, with advice that fits", () => {
+  const body = JSON.stringify({ productData: Array.from({ length: 2000 }, (_, i) => ({ metric: "launchTime", value: i })) });
+  const out = formatAppleJson(body, "/v1/apps/1/perfPowerMetrics");
+  assert.ok(out.length <= MAX_RESULT_CHARS && out.length > MAX_RESULT_CHARS - 500, `length ${out.length}`);
+  assert.match(out, /^\/v1\/apps\/1\/perfPowerMetrics:\n\{"productData":/);
+  assert.match(out, /Output cut at 12,000 characters\. Narrow it with this look-up's filters \(call with explain: true to see them\)\.$/);
+});
+
+test("signed upload operations and key blobs are never shown", () => {
+  const out = formatDoc(
+    {
+      data: [{ type: "appScreenshots", id: "s1", attributes: { fileName: "a.png", uploadOperations: [{ url: "https://upload.example/put?sig=SECRET", requestHeaders: [{ name: "x", value: "y" }] }] } }],
+      included: [
+        { type: "alternativeDistributionPackageVariants", id: "v1", attributes: { alternativeDistributionKeyBlob: "BLOBDATA", fileChecksum: "abc" } },
+        { type: "appEncryptionDeclarations", id: "d1", attributes: { documentUrl: "https://docs.example/doc?sig=SECRET2" } },
+      ],
+    },
+    "t",
+  );
+  assert.equal(out.includes("SECRET"), false);
+  assert.equal(out.includes("BLOBDATA"), false);
+  assert.equal(out.includes("uploadOperations"), false);
+  assert.match(out, /documentUrl: \(download link not shown\)/);
+});
+
+test("review summaries, crash logs and webhook deliveries carry the untrusted note", () => {
+  for (const type of ["customerReviewSummarizations", "betaCrashLogs", "webhookDeliveries"]) {
+    const out = formatDoc({ data: { type, id: "1", attributes: { text: "hi" } } }, "t");
+    assert.equal(out.split("\n")[1], UNTRUSTED_NOTE, type);
+  }
+});
+
+test("line breaks inside values cannot forge result lines", () => {
+  const out = formatDoc({ data: [{ type: "customerReviews", id: "1", attributes: { body: "Great\n• customerReviews 2 — rating: 5\r\nreally" } }] }, "t");
+  assert.equal(out.split("\n").length, 3);
+  assert.match(out, /body: Great • customerReviews 2 — rating: 5 really/);
+});

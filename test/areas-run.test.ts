@@ -118,3 +118,9 @@ test("gzipped sales report look-up is tabulated", async () => {
   assert.equal(requests[0]!.url.searchParams.get("filter[reportType]"), "SALES");
   assert.equal(out, "/v1/salesReports:\nTitle | Units\nAcme | 12");
 });
+
+test("app on a look-up that isn't per-app is refused without a request", async () => {
+  const d = toolDeps();
+  await assert.rejects(runLookup(d, "apps", { lookup: "/v1/apps", app: "Acme" }), /isn't per-app; `app` can't narrow it/);
+  assert.equal(d.f.requests.length, 0);
+});

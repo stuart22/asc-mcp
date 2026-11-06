@@ -10,13 +10,18 @@ function isEmpty(v: unknown): boolean {
   return v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
 }
 
+/** One line per resource: line breaks inside values (e.g. in customer text) become spaces. */
+function oneLine(s: string): string {
+  return s.replace(/\s*[\r\n]+\s*/g, " ");
+}
+
 function scalar(v: unknown): string {
   if (Array.isArray(v)) {
     const allScalar = v.every((x) => x === null || typeof x !== "object");
-    return truncate(allScalar ? v.map(String).join(", ") : JSON.stringify(v), MAX_VALUE);
+    return truncate(oneLine(allScalar ? v.map(String).join(", ") : JSON.stringify(v)), MAX_VALUE);
   }
   if (typeof v === "object" && v !== null) return truncate(JSON.stringify(v), MAX_VALUE);
-  return truncate(String(v), MAX_VALUE);
+  return truncate(oneLine(String(v)), MAX_VALUE);
 }
 
 function attributeParts(attrs: Record<string, unknown>): string[] {
@@ -100,5 +105,5 @@ export function formatAppleJson(text: string, title: string): string {
   } catch {
     compact = text;
   }
-  return capOutput(`${title}:\n${compact}`);
+  return capOutput(`${title}:\n${compact}`, "Narrow it with this look-up's filters (call with explain: true to see them).");
 }
